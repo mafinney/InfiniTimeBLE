@@ -13,8 +13,6 @@ uint8_t LOCK = 5;
 uint8_t DOWN = 6;
 uint8_t UP = 7;
 
-uint8_t *read_data;
-
 static void ButtonEvent(lv_obj_t *obj, lv_event_t event) {
     auto *screen = static_cast<ESP*>(obj->user_data);
     screen->OnButtonEvent(obj, event);
@@ -57,7 +55,6 @@ ESP::ESP(Pinetime::Controllers::ESPService& espService, Pinetime::System::System
     refresh_task = lv_task_create(RefreshTaskCallback, LV_DISP_DEF_REFR_PERIOD, LV_TASK_PRIO_MID, this);
     init_car(&wrx);
     lv_scr_load(wrx.main_scr);
-    tmp = 0;
 }
 
 ESP::~ESP() {

@@ -34,7 +34,7 @@ namespace Pinetime::Applications::Screens {
                 lv_obj_t *button;
                 lv_obj_t *label;
             };
-            int tmp;
+
             struct car {
                 lv_obj_t *main_scr, *debug_scr;
                 button door_b, window_b;
@@ -44,6 +44,8 @@ namespace Pinetime::Applications::Screens {
             };
 
             car wrx;
+
+            uint8_t read_data[2];
             
             /*CAR PAGE FUNCTIONS */
 
