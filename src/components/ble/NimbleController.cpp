@@ -49,7 +49,8 @@ NimbleController::NimbleController(Pinetime::System::SystemTask& systemTask,
     heartRateService {*this, heartRateController},
     motionService {*this, motionController},
     fsService {systemTask, fs},
-    serviceDiscovery({&currentTimeClient, &alertNotificationClient}) {
+    serviceDiscovery({&currentTimeClient, &alertNotificationClient}),
+    espService {systemTask} {
 }
 
 void nimble_on_reset(int reason) {
@@ -98,6 +99,7 @@ void NimbleController::Init() {
   heartRateService.Init();
   motionService.Init();
   fsService.Init();
+  espService.Init();
 
   int rc;
   rc = ble_hs_util_ensure_addr(0);
@@ -153,15 +155,15 @@ void NimbleController::StartAdvertising() {
     adv_params.itvl_max = 47;
     fastAdvCount++;
   } else {
-    adv_params.itvl_min = 1636;
-    adv_params.itvl_max = 1651;
+    adv_params.itvl_min = 32; // 1636
+    adv_params.itvl_max = 47; // 1651
   }
 
   fields.flags = BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_BREDR_UNSUP;
   fields.uuids16 = &HeartRateService::heartRateServiceUuid;
   fields.num_uuids16 = 1;
   fields.uuids16_is_complete = 1;
-  fields.uuids128 = &DfuService::serviceUuid;
+  fields.uuids128 = &espServiceUuid;
   fields.num_uuids128 = 1;
   fields.uuids128_is_complete = 1;
   fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
