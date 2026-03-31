@@ -47,8 +47,25 @@ void ESP::OnButtonEvent(lv_obj_t *obj, lv_event_t event) {
 
 void ESP::Refresh() {
     espService.GetReadValue(read_data, 2);
-    lv_label_set_text_fmt(wrx.door_l, "[0]: %i", read_data[0]);
-    lv_label_set_text_fmt(wrx.window_l, "[1]:%i", read_data[1]);
+
+    if (read_data[0] == UNLOCK) {
+        lv_label_set_text(wrx.door_l, "Unlocked");
+    } else if (read_data[0] == LOCK) {
+        lv_label_set_text(wrx.door_l, "Locked");
+    } else {
+        lv_label_set_text(wrx.door_l, "Error");
+    }
+
+    if (read_data[1] == DOWN) {
+        lv_label_set_text(wrx.window_l, "Down");
+    } else if (read_data[1] == UP) {
+        lv_label_set_text(wrx.window_l, "Up");
+    } else {
+        lv_label_set_text(wrx.window_l, "Error");
+    }
+
+    lv_obj_realign(wrx.door_l);
+    lv_obj_realign(wrx.window_l);
 }
 
 ESP::ESP(Pinetime::Controllers::ESPService& espService, Pinetime::System::SystemTask& systemTask) : espService {espService}, systemTask {systemTask} {
@@ -72,7 +89,7 @@ void ESP::init_car(car *c) {
     CreateLabel(&(c->door_l), c->main_scr, MED_BUTTON_WIDTH, MED_BUTTON_HEIGHT, LV_ALIGN_IN_LEFT_MID, 0, 0, (char *) "?");
     CreateLabel(&(c->window_l), c->main_scr, MED_BUTTON_WIDTH, MED_BUTTON_HEIGHT, LV_ALIGN_IN_RIGHT_MID, 0, 0, (char *) "?");
     CreateSwitch(c->auto_t, c->main_scr, ButtonEvent, SMALL_BUTTON_WIDTH, SMALL_BUTTON_HEIGHT, LV_ALIGN_IN_TOP_LEFT, 0, 0);
-    CreateLabel(&(c->connected_t), c->main_scr, SMALL_BUTTON_WIDTH, SMALL_BUTTON_HEIGHT, LV_ALIGN_IN_TOP_RIGHT, 0, 0, (char *) Symbols::moon);
+    CreateLabel(&(c->connected_t), c->main_scr, SMALL_BUTTON_WIDTH, SMALL_BUTTON_HEIGHT, LV_ALIGN_IN_TOP_RIGHT, 0, 0, (char *) "X");
 }
 
 /******HELPER FUNCTIONS******/
@@ -95,9 +112,10 @@ void ESP::CreateLabel(lv_obj_t **l, lv_obj_t *par, uint8_t w, uint8_t h, lv_alig
 }
 
 void ESP::CreateSwitch(lv_obj_t *s, lv_obj_t *par, lv_event_cb_t event_cb, uint8_t w, uint8_t h, lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs) {
-    s = lv_label_create(par, nullptr);
+    s = lv_switch_create(par, nullptr);
     s->user_data = this;
     lv_obj_set_event_cb(s, event_cb);
     lv_obj_set_size(s, w, h);
     lv_obj_align(s, par, align, x_ofs, y_ofs);
+    lv_obj_set_style_local_bg_color(s, LV_SWITCH_PART_BG, LV_STATE_DEFAULT, Colors::bgAlt);
 }
