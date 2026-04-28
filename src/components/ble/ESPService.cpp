@@ -39,18 +39,15 @@ void ESPService::Init() {
 int ESPService::OnBLEUpdate(struct ble_gatt_access_ctxt *ctxt) {
     if (ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR) {
         size_t notifSize = OS_MBUF_PKTLEN(ctxt->om);
-        size_t bufferSize = notifSize;
 
-        char tmp[bufferSize + 1];
-        os_mbuf_copydata(ctxt->om, 0, bufferSize, tmp);
-        for (int i = 0; i < 2; i++) {
-            read_data[i] = tmp[i];
+        if (notifSize < BUFSIZ) {
+            os_mbuf_copydata(ctxt->om, 0, notifSize, buf);
         }
     }
     return 0;
 }
 
-void ESPService::SendValue(char *data, int len) {
+void ESPService::SendValue(uint8_t *data, int len) {
     auto *om = ble_hs_mbuf_from_flat(data, len);
 
     uint16_t connectionHandle = espSystemTask.nimble().connHandle();
@@ -62,8 +59,11 @@ void ESPService::SendValue(char *data, int len) {
     ble_gattc_notify_custom(connectionHandle, espCharHandle, om);
 }
 
-void ESPService::GetReadValue(uint8_t *buf, int len) {
+void ESPService::GetReadValue(uint8_t *data, int len) {
+    if (len > BUFSIZ) {
+        return ;
+    }
     for (int i = 0; i < len; i++) {
-        buf[i] = (uint8_t) read_data[i];
+        data[i] = buf[i];
     }
 }

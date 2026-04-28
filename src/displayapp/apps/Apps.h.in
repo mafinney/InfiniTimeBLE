@@ -46,7 +46,7 @@ namespace Pinetime {
       SettingBluetooth,
       SettingOTA,
       Error,
-      ESP
+      CarControl
     };
 
     enum class WatchFace : uint8_t {

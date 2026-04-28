@@ -11,11 +11,44 @@ namespace Pinetime::Controllers {
     class ESPService;
 }
 
+/**
+ * The Car class will handle all ESP communication, providing an abstraction layer between the CarControl
+ * and the ESP in the car itself. The Car class provides simple methods for each action possible (ex UnlockDoors())
+ * 
+ * The Car class expects to read data in the following format
+ *  [Door status] [Window status]
+ */
+class Car {
+    public:
+        const uint8_t LOCK = 0;
+        const uint8_t UNLOCK = 1;
+        const uint8_t UP = 2;
+        const uint8_t DOWN = 3;
+
+        Car(Pinetime::Controllers::ESPService& espService);
+        ~Car();
+
+        uint8_t LockDoors();
+        uint8_t UnlockDoors();
+        uint8_t RollUpWindows();
+        uint8_t RollDownWindows();
+
+        uint8_t GetDoorState();
+        uint8_t GetWindowState();
+
+        void SendData(uint8_t *data, int len);
+        void ReadData(uint8_t *data, int len);
+    private:
+        uint8_t states[2];
+
+        Pinetime::Controllers::ESPService& espService;
+};
+
 namespace Pinetime::Applications::Screens {
-    class ESP : public Screen {
+    class CarControl : public Screen {
         public:
-            ESP(Pinetime::Controllers::ESPService& espService, Pinetime::System::SystemTask& systemTask);
-            ~ESP() override;
+            CarControl(Pinetime::Controllers::ESPService& espService, Pinetime::System::SystemTask& systemTask);
+            ~CarControl() override;
             void OnButtonEvent(lv_obj_t *obj, lv_event_t event);
             void Refresh() override;
 
@@ -35,24 +68,11 @@ namespace Pinetime::Applications::Screens {
                 lv_obj_t *label;
             };
 
-            struct car {
-                lv_obj_t *main_scr, *debug_scr;
-                button door_b, window_b;
-                lv_obj_t *door_l, *window_l;
-                lv_obj_t *auto_t;
-                lv_obj_t *connected_t;
-            };
+            Car *car;
 
-            car wrx;
-
-            uint8_t read_data[2];
-            
-            /*CAR PAGE FUNCTIONS */
-
-            /**
-             * init_car sets up all objects in a car
-             */
-            void init_car(car *c);
+            lv_obj_t *car_screen;
+            button send;
+            lv_obj_t *read;
 
             /*HELPER FUNCTIONS*/
 
@@ -91,13 +111,13 @@ namespace Pinetime::Applications::Screens {
 
 namespace Pinetime::Applications {
     template <>
-    struct AppTraits<Apps::ESP> {
-        static constexpr Apps app = Apps::ESP;
+    struct AppTraits<Apps::CarControl> {
+        static constexpr Apps app = Apps::CarControl;
         static constexpr const char *icon = "ES";
 
         static Screens::Screen *Create(AppControllers &controllers) {
             auto& esp = controllers.systemTask->nimble().esp();
-            return new Screens::ESP(esp, *controllers.systemTask);
+            return new Screens::CarControl(esp, *controllers.systemTask);
         };
 
         static bool IsAvailable(Pinetime::Controllers::FS &) {

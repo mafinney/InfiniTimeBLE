@@ -17,13 +17,11 @@ namespace Pinetime::Controllers {
             ESPService(Pinetime::System::SystemTask& system);
             void Init();
             int OnBLEUpdate(ble_gatt_access_ctxt *context);
-            void SendValue(char *data, int len); // Call this when a new value is ready to send
-            void GetReadValue(uint8_t *buf, int len);
+            void SendValue(uint8_t *data, int len); // Call this when a new value is ready to send
+            void GetReadValue(uint8_t *data, int len); // If len is greater than BUFSIZ, this will fail
             
         private:
             Pinetime::System::SystemTask& espSystemTask;
-
-            uint8_t KEY[3] = {5, 4, 3};
             
             //  03B80E5A-EDE8-4B33-A751-6CE34EC4C700
             static constexpr ble_uuid128_t espServiceUuid {
@@ -39,6 +37,6 @@ namespace Pinetime::Controllers {
             struct ble_gatt_svc_def svcDef[2];
             uint16_t espCharHandle;
 
-            char read_data[2];
+            uint8_t buf[BUFSIZ];
     };
 }
