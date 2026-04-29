@@ -25,6 +25,9 @@ ESPService::ESPService(Pinetime::System::SystemTask& system)
                      .uuid = &espServiceUuid.u,
                      .characteristics = charDef};
         svcDef[1] = {0};
+
+        buf[0] = 255;
+        buf[1] = 255;
 }
 
 void ESPService::Init() {
@@ -40,7 +43,7 @@ int ESPService::OnBLEUpdate(struct ble_gatt_access_ctxt *ctxt) {
     if (ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR) {
         size_t notifSize = OS_MBUF_PKTLEN(ctxt->om);
 
-        if (notifSize < BUFSIZ) {
+        if (notifSize <= BUFFER_LEN) {
             os_mbuf_copydata(ctxt->om, 0, notifSize, buf);
         }
     }
@@ -60,7 +63,7 @@ void ESPService::SendValue(uint8_t *data, int len) {
 }
 
 void ESPService::GetReadValue(uint8_t *data, int len) {
-    if (len > BUFSIZ) {
+    if (len != BUFFER_LEN) {
         return ;
     }
     for (int i = 0; i < len; i++) {

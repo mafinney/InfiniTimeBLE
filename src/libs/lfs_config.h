@@ -1,5 +1,5 @@
 #pragma once
-#define LFS_NO_DEBUG
+
 #include <libraries/log/nrf_log.h>
 
 #ifndef LFS_TRACE

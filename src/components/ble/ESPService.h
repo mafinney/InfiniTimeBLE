@@ -1,3 +1,10 @@
+/**
+ * The ESPService is a provides two methods for communicating with ESP32 based boards, SendValue() and GetReadValue()
+ * SendValue() will write to a characteristic value and notify subscribers.
+ * GetReadValue() will copy the last read data to a provided uint8_t array. This does not reread data from the ESP32, it just
+ * copies whatever was written by the ESP32 on the last notification the watch received. If no data has been read, [255, 255] will be written 
+ */
+
 #pragma once
 #define min // workaround: nimble's min/max macros conflict with libstdc++
 #define max
@@ -5,7 +12,7 @@
 #undef max
 #undef min
 
-#define KEY_REQ "KEY_REQ"
+#define BUFFER_LEN 2
 
 namespace Pinetime::System {
     class SystemTask;
@@ -18,7 +25,7 @@ namespace Pinetime::Controllers {
             void Init();
             int OnBLEUpdate(ble_gatt_access_ctxt *context);
             void SendValue(uint8_t *data, int len); // Call this when a new value is ready to send
-            void GetReadValue(uint8_t *data, int len); // If len is greater than BUFSIZ, this will fail
+            void GetReadValue(uint8_t *data, int len); // If len is greater than BUFFER_LEN, this will fail
             
         private:
             Pinetime::System::SystemTask& espSystemTask;
@@ -37,6 +44,6 @@ namespace Pinetime::Controllers {
             struct ble_gatt_svc_def svcDef[2];
             uint16_t espCharHandle;
 
-            uint8_t buf[BUFSIZ];
+            uint8_t buf[BUFFER_LEN];
     };
 }

@@ -11,39 +11,6 @@ namespace Pinetime::Controllers {
     class ESPService;
 }
 
-/**
- * The Car class will handle all ESP communication, providing an abstraction layer between the CarControl
- * and the ESP in the car itself. The Car class provides simple methods for each action possible (ex UnlockDoors())
- * 
- * The Car class expects to read data in the following format
- *  [Door status] [Window status]
- */
-class Car {
-    public:
-        const uint8_t LOCK = 0;
-        const uint8_t UNLOCK = 1;
-        const uint8_t UP = 2;
-        const uint8_t DOWN = 3;
-
-        Car(Pinetime::Controllers::ESPService& espService);
-        ~Car();
-
-        uint8_t LockDoors();
-        uint8_t UnlockDoors();
-        uint8_t RollUpWindows();
-        uint8_t RollDownWindows();
-
-        uint8_t GetDoorState();
-        uint8_t GetWindowState();
-
-        void SendData(uint8_t *data, int len);
-        void ReadData(uint8_t *data, int len);
-    private:
-        uint8_t states[2];
-
-        Pinetime::Controllers::ESPService& espService;
-};
-
 namespace Pinetime::Applications::Screens {
     class CarControl : public Screen {
         public:
@@ -68,11 +35,10 @@ namespace Pinetime::Applications::Screens {
                 lv_obj_t *label;
             };
 
-            Car *car;
-
             lv_obj_t *car_screen;
-            button send;
-            lv_obj_t *read;
+            button incr, send;
+            lv_obj_t *count_lbl, *read_lbl;
+            int count;
 
             /*HELPER FUNCTIONS*/
 
