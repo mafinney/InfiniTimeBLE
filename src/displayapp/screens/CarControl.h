@@ -35,7 +35,7 @@ namespace Pinetime::Applications::Screens {
                 lv_obj_t *label;
             };
 
-            lv_obj_t *car_screen;
+            lv_obj_t *car_screen = lv_obj_create(NULL, NULL);
             button incr, send;
             lv_obj_t *count_lbl, *read_lbl;
             int count;
