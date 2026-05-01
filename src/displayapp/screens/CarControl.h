@@ -29,29 +29,19 @@ namespace Pinetime::Applications::Screens {
             Pinetime::System::SystemTask& systemTask;
             lv_task_t* refresh_task;
 
-            // Each button is made of two lv objects, a button and a label
             struct button {
                 lv_obj_t *button;
                 lv_obj_t *label;
             };
 
             lv_obj_t *car_screen = lv_obj_create(NULL, NULL);
+            // lv_obj_t *incr_button, *incr_lbl;
+            // lv_obj_t *send_button, *send_lbl;
             button incr, send;
             lv_obj_t *count_lbl, *read_lbl;
             int count;
 
             /*HELPER FUNCTIONS*/
-
-            /**
-             * CreateButton is a wrapper function for all the calls needed to create a button struct object
-             * Takes a pointer to a button
-             * A parent screen
-             * A function callback
-             * A size
-             * An alignment
-             * An initial label
-             */
-            void CreateButton(button *b, lv_obj_t *par, lv_event_cb_t event_cb, uint8_t w, uint8_t h, lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs, char *text);
 
             /**
              * CreateLabel is a wrapper function for all the calls needed to create a label
