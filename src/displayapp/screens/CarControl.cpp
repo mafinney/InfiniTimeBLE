@@ -14,80 +14,25 @@ void CarControl::OnButtonEvent(lv_obj_t *obj, lv_event_t event) {
         return ;
 	}
 	if (obj == doors.button) {
-		if (status[1] == LOCKED) {
-			buf[0] = UNLOCKDOORS;
-		} else if (status[1] == UNLOCKED) {
-			buf[0] = LOCKDOORS;
-		}
-		esp.write(buf, 1);
+		
 	} else if (obj == windows.button) {
-		if (status[2] == LOCKED) {
-			buf[0] = ROLLDOWNWINDOWS;
-		} else if (status[2] == UNLOCKED) {
-			buf[0] = ROLLUPWINDOWS;
-		}
-		esp.write(buf, 1);
+		
 	}
 }
 
 void CarControl::Refresh() {
 	esp.read(buf, 17);
-	if (buf[0] == CHECK_HASH) {
-		check_hash();
-	}
+	if (buf[0] == PacketType::CHECK_AUTH) {
+		uint8_t hash[32];
+		uint8_t nonce[16];
+		memcpy(nonce, buf + 1, 16);
 
-	// Figure out if we are still connected
-	status[0] = esp.isConnected();
-
-	// Figure out the status of the doors and windows
-	status[1] = GetDoorStatus();
-	status[2] = GetWindowStatus();
-
-	// Update the connected status label
-	switch (status[0]) {
-		case UNKNOWN:
-			lv_obj_set_style_local_text_color(connected, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_GRAY);
-			break;
-		case LOCKED:
-			lv_obj_set_style_local_text_color(connected, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_RED);
-			break;
-		case UNLOCKED:
-			lv_obj_set_style_local_text_color(connected, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_GREEN);
-			break;
-	}
-
-	// Update the doors status label
-	switch (status[1]) {
-		case UNKNOWN:
-			lv_obj_set_style_local_text_color(doors.label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_GRAY);
-			break;
-		case LOCKED:
-			lv_obj_set_style_local_text_color(doors.label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_RED);
-			break;
-		case UNLOCKED:
-			lv_obj_set_style_local_text_color(doors.label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_GREEN);
-			break;
-	}
-
-	// Update the windows status label
-	switch (status[2]) {
-		case UNKNOWN:
-			lv_obj_set_style_local_text_color(windows.label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_GRAY);
-			break;
-		case LOCKED:
-			lv_obj_set_style_local_text_color(windows.label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_RED);
-			break;
-		case UNLOCKED:
-			lv_obj_set_style_local_text_color(windows.label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_GREEN);
-			break;
+		CheckHash(key, nonce, hash);
+		WritePacket(CHECK_AUTH_RESP, hash);
 	}
 }
 
 CarControl::CarControl(Pinetime::Controllers::ESPService& espService) : esp {espService} {
-	status[0] = UNKNOWN;
-	status[1] = UNKNOWN;
-	status[2] = UNKNOWN;
-
 	CreateLabel(&car_name, car_screen, SMALL_BUTTON_W, SMALL_BUTTON_H, LV_ALIGN_IN_TOP_MID, 0, 0, (char *) "WRX");
 	CreateLabel(&connected, car_screen, SMALL_BUTTON_W, SMALL_BUTTON_H, LV_ALIGN_IN_TOP_RIGHT, 0, 0, (char *) Symbols::bluetooth);
 	CreateButton(&doors, car_screen, ButtonEvent, SMALL_BUTTON_W, SMALL_BUTTON_H, LV_ALIGN_IN_LEFT_MID, 0, 0, (char *) "DOORS");
@@ -100,6 +45,8 @@ CarControl::CarControl(Pinetime::Controllers::ESPService& espService) : esp {esp
 
 	refresh_task = lv_task_create(RefreshTaskCallback, LV_DISP_DEF_REFR_PERIOD, LV_TASK_PRIO_MID, this);
 	lv_scr_load(car_screen);
+
+	WritePacket(READY_TO_AUTH, NULL);
 }
 
 CarControl::~CarControl() {
@@ -107,44 +54,55 @@ CarControl::~CarControl() {
   	lv_obj_clean(lv_scr_act());
 }
 
-int8_t CarControl::GetDoorStatus() {
-	esp.read(buf, 2);
-	// if (buf[0] != LOCKED || buf[0] != UNLOCKED) {
-	// 	return UNKNOWN;
-	// }
-	return buf[0];
-}
+void CarControl::WritePacket(PacketType packetType, uint8_t *data) {
+	uint8_t packet[MAX_PACKET_LEN];
+	uint8_t packetLen;
+	packet[0] = packetType;
+	packetLen = 1;
 
-int8_t CarControl::GetWindowStatus() {
-	esp.read(buf, 2);
-	// if (buf[1] != LOCKED || buf[1] != UNLOCKED) {
-	// 	return UNKNOWN;
-	// }
-	return buf[1];
-}
-
-void CarControl::check_hash() {
-	uint8_t nonce[16];
-	for (int i = 0; i < 16; i++) {
-		nonce[i] = buf[i + 1];
+	switch (packetType) {
+		case PacketType::READY_TO_AUTH:
+			// there is no data to append, do nothing
+			break;
+		case PacketType::CHECK_AUTH:
+			// the watch shouldn't send this
+			return ;
+		case PacketType::CHECK_AUTH_RESP:
+			// send the generated hash (32 bytes)
+			memcpy(packet + 1, data, 32);
+			packetLen += 32;
+			break;
+		case PacketType::AUTH_OK:
+			// the watch shouldn't send this
+			break;
+		case PacketType::AUTH_FAILED:
+			// the watch shouldn't send this
+			break;
+		case PacketType::COMMAND:
+			// send the single byte command
+			packet[1] = data[0];
+			packetLen += 1;
+			break;
+		case PacketType::UPDATE:
+			// the watch shouldn't send this
+			break;
 	}
+	esp.write(packet, packetLen);
+}
+
+void CarControl::CheckHash(const uint8_t key[16], const uint8_t nonce[16], uint8_t hash[32]) {
 	uint8_t input[32];
 	memcpy(input, key, 16);
 	memcpy(input + 16, nonce, 16);
-	uint8_t hash[32];
 
 	struct tc_sha256_state_struct sha_ctx;
 	tc_sha256_init(&sha_ctx);
-	tc_sha256_update(&sha_ctx, input, sizeof(input));
+
+	// tc_sha256_update(&sha_ctx, key, 16);
+	// tc_sha256_update(&sha_ctx, nonce, 16);
+
+	tc_sha256_update(&sha_ctx, input, 32);
 	tc_sha256_final(hash, &sha_ctx);
-
-	uint8_t output[33];
-	output[0] = CHECK_HASH_RESP;
-	for (int i = 0; i < 32; i++) {
-		output[i + 1] = hash[i];
-	}
-
-	esp.write(output, 33);
 }
 
 void CarControl::CreateButton(button *b, lv_obj_t *par, lv_event_cb_t event_cb, uint8_t w, uint8_t h, lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs, char *text) {

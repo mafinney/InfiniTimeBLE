@@ -8,18 +8,21 @@
 
 #include <tinycrypt/sha256.h>
 
-#define UNKNOWN -1
-#define LOCKED 0 // Up, for windows
-#define UNLOCKED 1 // Down, for windows
-
-#define CHECK_HASH 9
-#define CHECK_HASH_RESP 10
-
 enum Command {
 	LOCKDOORS,
 	UNLOCKDOORS,
 	ROLLUPWINDOWS,
 	ROLLDOWNWINDOWS
+};
+
+enum PacketType {
+	READY_TO_AUTH,
+	CHECK_AUTH,
+	CHECK_AUTH_RESP,
+	AUTH_OK,
+	AUTH_FAILED,
+	COMMAND,
+	UPDATE
 };
 
 namespace Pinetime::Controllers {
@@ -38,7 +41,7 @@ namespace Pinetime::Applications {
 			private:
 				Controllers::ESPService& esp;
 				uint8_t buf[MAX_PACKET_LEN];
-				uint8_t key[16] = {0x22, 0x38, 0x9d, 0x03, 0xbf, 0x8c, 0xb7, 0x3d, 0x02, 0xc9, 0xfd, 0xf7, 0x67, 0xab, 0x69, 0x8b};
+				const uint8_t key[16] = {0x22, 0x38, 0x9d, 0x03, 0xbf, 0x8c, 0xb7, 0x3d, 0x02, 0xc9, 0xfd, 0xf7, 0x67, 0xab, 0x69, 0x8b};
 
 				static constexpr uint8_t MEDIUM_BUTTON_W = 115;
             	static constexpr uint8_t MEDIUM_BUTTON_H = 80;
@@ -65,18 +68,20 @@ namespace Pinetime::Applications {
 				lv_task_t *refresh_task;
 
 				/**
-				 * GetDoorStatus requests the door status from the car
-				 * Returns either LOCKED, UNLOCKED, or UNKNOWN
+				 * CheckHash computes the hash of a given nonce and key
+				 * Takes a key
+				 * A nonce
+				 * An address to store the computed hash
 				 */
-				int8_t GetDoorStatus();
+				void CheckHash(const uint8_t key[16], const uint8_t nonce[16], uint8_t hash[32]);
 
 				/**
-				 * GetWindowStatus requests the window status from the car
-				 * Returns either LOCKED, UNLOCKED, or UNKNOWN
+				 * WritePacket creates and then writes a packet to the car. The data array is assumed to be the 
+				 * correct length for the specified packet type
+				 * Takes a packet type
+				 * An array of data to send
 				 */
-				int8_t GetWindowStatus();
-
-				void check_hash();
+				void WritePacket(PacketType packetType, uint8_t *data);
 
 				/**
             	 * CreateButton is a wrapper function for all the calls needed to create a button struct object
