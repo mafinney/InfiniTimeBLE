@@ -37,7 +37,7 @@ namespace Pinetime::Applications {
 
 			private:
 				Controllers::ESPService& esp;
-				int8_t buf[MAX_PACKET_LEN];
+				uint8_t buf[MAX_PACKET_LEN];
 				uint8_t key[16] = {0x22, 0x38, 0x9d, 0x03, 0xbf, 0x8c, 0xb7, 0x3d, 0x02, 0xc9, 0xfd, 0xf7, 0x67, 0xab, 0x69, 0x8b};
 
 				static constexpr uint8_t MEDIUM_BUTTON_W = 115;

@@ -144,7 +144,7 @@ void CarControl::check_hash() {
 		output[i + 1] = hash[i];
 	}
 
-	esp.write((int8_t *) output, 33);
+	esp.write(output, 33);
 }
 
 void CarControl::CreateButton(button *b, lv_obj_t *par, lv_event_cb_t event_cb, uint8_t w, uint8_t h, lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs, char *text) {
